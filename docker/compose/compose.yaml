@@ -1,0 +1,27 @@
+version: '3.8'
+
+networks:
+  shared-network:
+    driver: bridge
+
+services:
+
+  db:
+    container_name: counter_db
+    networks:
+      - shared-network
+    image: redis:6-alpine
+    ports:
+      - 6379:6379      
+
+  counter-api:
+    container_name: counter-api
+    networks:
+      - shared-network
+    image: counter-api-amd64:1.0
+    command: ./counter-api -db_host counter_db:6379
+    ports:
+      - 3000:3000 # CRUD API
+      - 4000:4000 # DEBUG API
+    depends_on:
+      - db

@@ -1,0 +1,18 @@
+# Build the Go Binary.
+FROM golang:1.15.5 as build_counter-api
+ENV CGO_ENABLED 0
+ARG VCS_REF
+
+RUN mkdir -p /service
+WORKDIR /service
+COPY . .
+
+WORKDIR /service/app
+RUN go build -o counter-api -ldflags "-X main.build=${VCS_REF}"
+
+FROM alpine:3.12
+ARG BUILD_DATE
+ARG VCS_REF
+COPY --from=build_counter-api /service/app /service
+WORKDIR /service
+CMD ["./counter-api"]
