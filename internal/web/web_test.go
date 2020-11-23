@@ -17,7 +17,7 @@ func TestApp(t *testing.T) {
 	t.Run("it correct process on GET", func(t *testing.T) {
 		stubShutdown := make(chan os.Signal, 1)
 		want := "test"
-		app := web.NewApp(stubShutdown, SrubMiddleware(want, nil))
+		app := web.NewApp(stubShutdown, StubMiddleware(want, nil))
 		app.Handle(http.MethodGet, "/", StubHandler)
 
 		request := newGetRequest()
@@ -38,7 +38,7 @@ func TestApp(t *testing.T) {
 	t.Run("it should send signal on error", func(t *testing.T) {
 		stubShutdown := make(chan os.Signal, 1)
 		want := "test"
-		app := web.NewApp(stubShutdown, SrubMiddleware(want, errors.New("test error")))
+		app := web.NewApp(stubShutdown, StubMiddleware(want, errors.New("test error")))
 		app.Handle(http.MethodGet, "/", StubHandler)
 
 		request := newGetRequest()
@@ -56,7 +56,7 @@ func TestApp(t *testing.T) {
 		}
 	})
 }
-func TesMiddleware(t *testing.T) {
+func TestMiddleware(t *testing.T) {
 	tests := []struct {
 		name string
 		mw   []string
@@ -73,7 +73,7 @@ func TesMiddleware(t *testing.T) {
 			want: "2",
 		},
 		{
-			name: "first middleware",
+			name: "third middleware",
 			mw:   []string{"", "", "3"},
 			want: "3",
 		},
@@ -84,7 +84,7 @@ func TesMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			app := web.NewApp(stubShutdown, SrubMiddleware(tt.mw[1], nil), SrubMiddleware(tt.mw[2], nil), SrubMiddleware(tt.mw[3], nil))
+			app := web.NewApp(stubShutdown, StubMiddleware(tt.mw[0], nil), StubMiddleware(tt.mw[1], nil), StubMiddleware(tt.mw[2], nil))
 			app.Handle(http.MethodGet, "/", StubHandler)
 
 			request := newGetRequest()
@@ -105,17 +105,14 @@ func newGetRequest() *http.Request {
 	return req
 }
 
-func SrubMiddleware(body string, err error) web.Middleware {
+func StubMiddleware(body string, err error) web.Middleware {
 	m := func(handler web.Handler) web.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			_, ok := ctx.Value(web.KeyValues).(*web.Values)
-			if !ok {
+			if err != nil {
 				return web.NewShutdownError("web value missing from context")
 			}
-			if body != "" {
-				fmt.Fprint(w, body)
-			}
-			return err
+			fmt.Fprint(w, body)
+			return handler(ctx, w, r)
 		}
 		return h
 	}

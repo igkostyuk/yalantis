@@ -9,6 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// // c contains the global counters.
+// var globalCounter = expvar.NewInt("/ counts")
+
 type Counter struct {
 	log *log.Logger
 	db  database.DB
