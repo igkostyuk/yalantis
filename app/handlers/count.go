@@ -9,14 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// // c contains the global counters.
-// var globalCounter = expvar.NewInt("/ counts")
-
 type countGroup struct {
 	count count.Counter
 }
 
-func (cg countGroup) get(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cg *countGroup) get(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	v, ok := ctx.Value(web.KeyValues).(*web.Values)
 	if !ok {
